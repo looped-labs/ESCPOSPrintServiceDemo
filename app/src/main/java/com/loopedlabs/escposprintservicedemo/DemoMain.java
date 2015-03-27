@@ -41,6 +41,8 @@ import android.widget.RadioButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.loopedlabs.util.TxtFmt;
+
 import java.util.List;
 
 
@@ -92,11 +94,51 @@ public class DemoMain extends ActionBarActivity {
             }
         });
 
-        Button btnCrLf = (Button) findViewById(R.id.btnCrLf);
+        Button btnCrLf = (Button) findViewById(R.id.btnPrintReceipt);
         btnCrLf.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                PrintCmd("\r\n");
+
+                //Generate the receipt
+                MyReceipt rcpt = new MyReceipt();
+                rcpt.setReceiptHeader1("Bill Header");
+                rcpt.setReceiptHeader2("-----------");
+                rcpt.setReceiptFooter1("Looped Labs Pvt. Ltd.");
+                rcpt.setReceiptFooter2("www.loopedlabs.com");
+                rcpt.addLineItem("Item 1", "5.00", "1", "5.00");
+                rcpt.addLineItem("Item 2", "12.00", "2", "24.00");
+                rcpt.setReceiptTotal("29.00");
+
+                // Generate the Print Buffer
+                MyPrinter btp = new MyPrinter(DemoMain.this);
+                btp.printLogo();
+                btp.setCenterAlign();
+                btp.setFontStyleBold();
+                btp.printLine(rcpt.getReceiptHeader1());
+                btp.printLine(rcpt.getReceiptHeader2());
+                btp.printLineFeed();
+                btp.printLine(TxtFmt.justify("Name : ", "Customer Name", btp.getMaxLineLength()));
+                btp.printDivider('-');
+                btp.printLine(rcpt.getsReceiptLineHeader());
+                btp.printDivider('-');
+                List<MyReceiptLineItem> rli = rcpt.getLineItems();
+                for (MyReceiptLineItem li : rli) {
+                    btp.printLine(li.getLine());
+                }
+                btp.printDivider('-');
+                btp.printLine(TxtFmt.justify("TOTAL : ",rcpt.getReceiptTotal(),38));
+                btp.printDivider('-');
+                btp.setCenterAlign();
+                btp.printLine(rcpt.getReceiptFooter1());
+                btp.printLine(rcpt.getReceiptFooter2());
+                btp.printBlankLines(2);
+                btp.setLeftAlign();
+
+                //Print the receipt
+                byte[] pb = btp.getPrintData();
+                if (!PrintCmd(pb)) {
+                    Toast.makeText(DemoMain.this,"Failed",Toast.LENGTH_SHORT).show();
+                }
             }
         });
 
@@ -111,7 +153,7 @@ public class DemoMain extends ActionBarActivity {
                         i.addCategory(Intent.CATEGORY_LAUNCHER);
                         startActivity(i);
                     }
-                } catch (Exception e) {
+                } catch (Exception ignored) {
 
                 }
             }
@@ -158,11 +200,8 @@ public class DemoMain extends ActionBarActivity {
     }
 
     public boolean PrintCmd(String s) {
-        if (s.isEmpty()) {
-            return false;
-        }
+        return !s.isEmpty() && PrintCmd(s.getBytes());
 
-        return PrintCmd(s.getBytes());
     }
     public boolean PrintCmd(byte[] byteArray) {
         if (byteArray.length <= 0) {
@@ -193,10 +232,7 @@ public class DemoMain extends ActionBarActivity {
         List resolveInfo =
                 packageManager.queryIntentActivities(intent,
                         PackageManager.MATCH_DEFAULT_ONLY);
-        if (resolveInfo.size() > 0) {
-            return true;
-        }
-        return false;
+        return resolveInfo.size() > 0;
     }
 
     private byte[] hexStringToByteArray(String s) {

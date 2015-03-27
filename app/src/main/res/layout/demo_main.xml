@@ -122,11 +122,11 @@
         android:layout_margin="2dp"/>
 
     <Button
-        android:id="@+id/btnCrLf"
+        android:id="@+id/btnPrintReceipt"
         android:layout_width="wrap_content"
         android:layout_weight="1"
         android:layout_height="wrap_content"
-        android:text="CR LF"
+        android:text="Print Receipt"
         android:layout_margin="2dp"/>
 
     </TableRow>

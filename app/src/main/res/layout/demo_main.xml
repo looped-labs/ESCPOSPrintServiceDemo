@@ -64,9 +64,6 @@
             android:id="@+id/btnPrint"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_alignLeft="@+id/etPrintInput"
-            android:layout_alignStart="@+id/etPrintInput"
-            android:layout_below="@+id/textHint"
             android:layout_gravity="center"
             android:layout_margin="2dp"
             android:layout_weight="1"
@@ -94,9 +91,6 @@
                 android:id="@+id/rbAscii"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignBottom="@+id/btnPrint"
-                android:layout_alignLeft="@+id/button2"
-                android:layout_alignStart="@+id/button2"
                 android:layout_gravity="left"
                 android:checked="true"
                 android:text="Ascii"/>
@@ -105,10 +99,7 @@
                 android:id="@+id/rbHex"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_above="@+id/button"
                 android:layout_gravity="left"
-                android:layout_toEndOf="@+id/button2"
-                android:layout_toRightOf="@+id/button2"
                 android:text="Hex"/>
         </RadioGroup>
     </TableRow>
@@ -121,7 +112,6 @@
             android:id="@+id/btnLf"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
             android:layout_margin="2dp"
             android:layout_weight="1"
             android:text="LF"

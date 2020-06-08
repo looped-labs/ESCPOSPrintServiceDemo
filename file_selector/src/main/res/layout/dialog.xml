@@ -1,0 +1,74 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/saveFileDialog"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical">
+
+    <ListView
+        android:id="@+id/fileList"
+        android:layout_width="fill_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:padding="10dp" />
+
+    <LinearLayout
+        android:id="@+id/fileLinearLayout2"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="5dp">
+
+        <TextView
+            android:id="@+id/fileTextView1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+
+            android:text="@string/enterFileName"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <EditText
+            android:id="@+id/fileName"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:contentDescription="@string/enterFileName"
+            android:inputType="text" />
+
+        <LinearLayout
+            android:id="@+id/fileLinearLayout3"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/fileSaveLoad"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/save" />
+
+            <Button
+                android:id="@+id/fileCancel"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:padding="10dp"
+                android:text="@string/cancel" />
+
+            <Button
+                android:id="@+id/newFolder"
+                android:layout_width="fill_parent"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="@string/newFolderButtonText" />
+        </LinearLayout>
+
+        <Spinner
+            android:id="@+id/fileFilter"
+            android:layout_height="wrap_content"
+            android:layout_width="fill_parent"
+            android:background="@drawable/spinner_bg"/>
+    </LinearLayout>
+
+</LinearLayout>

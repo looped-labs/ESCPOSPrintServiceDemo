@@ -22,27 +22,29 @@
     THE SOFTWARE.
     -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:paddingLeft="@dimen/activity_horizontal_margin"
-    android:paddingRight="@dimen/activity_horizontal_margin"
-    tools:context=".DemoMain">
+              xmlns:tools="http://schemas.android.com/tools"
+              android:layout_width="match_parent"
+              android:layout_height="match_parent"
+              android:orientation="vertical"
+              android:paddingLeft="@dimen/activity_horizontal_margin"
+              android:paddingRight="@dimen/activity_horizontal_margin"
+              android:paddingTop="@dimen/activity_vertical_margin"
+              tools:context=".DemoMain">
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:focusable="true"
         android:focusableInTouchMode="true"
-        android:orientation="horizontal" />
+        android:orientation="horizontal"/>
 
     <EditText
         android:id="@+id/etPrintCmd"
         android:layout_width="fill_parent"
         android:layout_height="50dp"
+        android:layout_margin="2dp"
         android:inputType="text"
-        android:layout_margin="2dp" />
+        android:visibility="gone"/>
 
     <TextView
         android:id="@+id/textHint"
@@ -50,11 +52,13 @@
         android:layout_height="wrap_content"
         android:layout_margin="2dp"
         android:gravity="center"
-        android:text="@string/text_hint" />
+        android:text="@string/text_hint"
+        android:visibility="gone"/>
 
     <TableRow
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:visibility="gone">
 
         <Button
             android:id="@+id/btnPrint"
@@ -63,27 +67,27 @@
             android:layout_alignLeft="@+id/etPrintInput"
             android:layout_alignStart="@+id/etPrintInput"
             android:layout_below="@+id/textHint"
-            android:layout_weight="1"
+            android:layout_gravity="center"
             android:layout_margin="2dp"
-            android:text="PRINT"
-            android:layout_gravity="center" />
+            android:layout_weight="1"
+            android:text="PRINT"/>
 
         <CheckBox
+            android:id="@+id/cbLf"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="LF"
-            android:id="@+id/cbLf"
             android:layout_gravity="center"
-            android:checked="true" />
+            android:layout_weight="1"
+            android:checked="true"
+            android:text="LF"/>
 
         <RadioGroup
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center_horizontal|center_vertical"
+            android:layout_margin="2dp"
             android:layout_weight="1"
             android:gravity="center_horizontal"
-            android:layout_margin="2dp"
             android:orientation="vertical">
 
             <RadioButton
@@ -93,41 +97,44 @@
                 android:layout_alignBottom="@+id/btnPrint"
                 android:layout_alignLeft="@+id/button2"
                 android:layout_alignStart="@+id/button2"
-                android:text="Ascii"
+                android:layout_gravity="left"
                 android:checked="true"
-                android:layout_gravity="left" />
+                android:text="Ascii"/>
 
             <RadioButton
                 android:id="@+id/rbHex"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_above="@+id/button"
+                android:layout_gravity="left"
                 android:layout_toEndOf="@+id/button2"
                 android:layout_toRightOf="@+id/button2"
-                android:text="Hex"
-                android:layout_gravity="left" />
+                android:text="Hex"/>
         </RadioGroup>
     </TableRow>
 
     <TableRow
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
-    <Button
-        android:id="@+id/btnLf"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_centerVertical="true"
-        android:text="LF"
-        android:layout_margin="2dp"/>
 
-    <Button
-        android:id="@+id/btnPrintReceipt"
-        android:layout_width="wrap_content"
-        android:layout_weight="1"
-        android:layout_height="wrap_content"
-        android:text="Print Receipt"
-        android:layout_margin="2dp"/>
+        <Button
+            android:id="@+id/btnLf"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_centerVertical="true"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="LF"
+            android:visibility="gone"/>
+
+        <Button
+            android:id="@+id/btnPrintConfig"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="Open Printer Configuration"/>
 
     </TableRow>
 
@@ -135,20 +142,70 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center">
-    <Button
-        android:layout_margin="2dp"
-        android:id="@+id/btnPrintConfig"
-        android:layout_width="wrap_content"
+
+        <Button
+            android:id="@+id/btnPrintReceipt"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="Print Text"/>
+
+        <Button
+            android:id="@+id/btnPrintPdf"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="Print PDF File"/>
+
+    </TableRow>
+
+    <TableRow
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-       android:text="Open Printer Service / Configuration" />
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnPrintImg"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="Print Image"/>
+
+        <Button
+            android:id="@+id/btnPrintHtml"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="Print HTML"/>
+    </TableRow>
+
+    <TableRow
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center">
+
+        <Button
+            android:id="@+id/btnPrintHtml1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_margin="2dp"
+            android:layout_weight="1"
+            android:text="Print HTML (String Input)"/>
     </TableRow>
 
     <ListView
-        android:layout_width="match_parent"
         android:id="@+id/lvLog"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1" >
+        android:layout_weight="1">
     </ListView>
 
     <TextView
@@ -161,6 +218,6 @@
         android:gravity="center"
         android:text="Looped Labs"
         android:textAppearance="?android:attr/textAppearanceLarge"
-        android:textColor="#ff0032ff" />
+        android:textColor="#ff0032ff"/>
 
 </LinearLayout>

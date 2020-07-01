@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string-array name="print_services">
+        <item>ESC POS Bluetooth Print Service</item>
+        <item>ESC POS Network/WIFI Print Service</item>
+<!--        <item>ESC POS USB Print Service</item>-->
+    </string-array>
+    <string-array name="print_type">
+        <item>PNG Image URL</item>
+        <item>JPG Image URL</item>
+        <item>PDF URL</item>
+        <item>HTML URL</item>
+    </string-array>
+    <string-array name="print_file_type">
+        <item>PNG Image File</item>
+        <item>JPG Image File</item>
+        <item>PDF File</item>
+        <item>HTML File</item>
+    </string-array>
+</resources>

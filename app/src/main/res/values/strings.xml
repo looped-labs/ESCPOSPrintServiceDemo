@@ -26,4 +26,16 @@
 
     <string name="text_hint">Key in your commands to send to printer.</string>
     <string name="action_about">About</string>
+    <string name="looped_labs">Looped Labs</string>
+    <string name="select_print_service">Select Print Service</string>
+    <string name="open_printer_configuration">Open Printer Configuration</string>
+    <string name="url_text">Image / PDF / HTML URL</string>
+    <string name="print_url">Print URL</string>
+    <string name="sample_image_url">https://loopedlabs.com/web-print/loopedlabs.png</string>
+    <string name="pdf_url">PDF URL</string>
+    <string name="sample_pdf_url">https://loopedlabs/web-print/sample.pdf</string>
+    <string name="file_text">PDF / Image / HTML File</string>
+    <string name="sample_file">Select a Image / PDF / HTML File</string>
+    <string name="browse">Browse</string>
+    <string name="print_file">Print File</string>
 </resources>

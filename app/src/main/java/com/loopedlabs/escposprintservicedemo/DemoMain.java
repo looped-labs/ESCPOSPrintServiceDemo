@@ -24,33 +24,29 @@
 package com.loopedlabs.escposprintservicedemo;
 
 import android.Manifest;
-import android.content.Context;
+import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.content.pm.ResolveInfo;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Button;
-import android.widget.CheckBox;
+import android.view.inputmethod.InputMethodManager;
+import android.webkit.URLUtil;
+import android.widget.AdapterView;
 import android.widget.EditText;
-import android.widget.RadioButton;
-import android.widget.Toast;
+import android.widget.Spinner;
+import android.widget.TextView;
 
 import com.loopedlabs.selector.FileOperation;
 import com.loopedlabs.selector.FileSelector;
 import com.loopedlabs.selector.OnHandleFileListener;
-import com.loopedlabs.util.FileUtils;
-import com.loopedlabs.util.TxtFmt;
 import com.loopedlabs.util.debug.DebugLog;
 
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -59,18 +55,32 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 
-import static com.loopedlabs.util.FileUtils.readFile;
 import static com.loopedlabs.util.FileUtils.readFileAsByteArray;
 
 
 public class DemoMain extends AppCompatActivity {
-    private Context mContext;
-    private static String ESC_POS_PRINT_INTENT_ACTION = "com.escpos.intent.action.PRINT";
+    private static final String ESC_POS_PRINT_INTENT_ACTION = "org.escpos.intent.action.PRINT";
+    private static final String ESC_POS_BLUETOOTH_PRINT_SERVICE = "com.loopedlabs.escposprintservice";
+    private static final String ESC_POS_WIFI_PRINT_SERVICE = "com.loopedlabs.netprintservice";
+    private static final String ESC_POS_USB_PRINT_SERVICE = "com.loopedlabs.usbprintservice";
+    private int iSelPrintService = 0;
+    private int iSelPrintUrlType = 0;
+    private int iSelPrintFileType = 0;
+    private String sAppPackage = "com.loopedlabs.escposprintservice";
+    private Spinner spPrintService;
+    private String sPrintUrl = "";
+    private String sPrintFile = "";
+    private String sDataType = "";
+    private String sFileType = "";
+    private TextView tvPrintFile;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.demo_main);
+
+        DebugLog.setDebugMode(BuildConfig.DEBUG);
+        DebugLog.logTrace();
 
         initControls();
 
@@ -78,115 +88,37 @@ public class DemoMain extends AppCompatActivity {
     }
 
     private void initControls() {
-        mContext = this;
-        final EditText etPrintCmd = findViewById(R.id.etPrintCmd);
-        Button btnPrint = findViewById(R.id.btnPrint);
-        final CheckBox cbLf = findViewById(R.id.cbLf);
-        final RadioButton rbAscii = findViewById(R.id.rbAscii);
-
-        btnPrint.setOnClickListener(new View.OnClickListener() {
+        DebugLog.logTrace();
+        iSelPrintService = 0;
+        sAppPackage = ESC_POS_BLUETOOTH_PRINT_SERVICE;
+        spPrintService = findViewById(R.id.spPrintService);
+        spPrintService.setTag("a");
+        spPrintService.setSelection(iSelPrintService, false);
+        spPrintService.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
             @Override
-            public void onClick(View v) {
-                String s = etPrintCmd.getText().toString();
-                if (!rbAscii.isChecked()) {
-                    if (!s.isEmpty() && (s.length() % 2 == 0)) {
-                        PrintCmd(hexStringToByteArray(s));
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                if (!spPrintService.getTag().equals("a")) {
+                    iSelPrintService = position;
+                    switch (iSelPrintService) {
+                        case 0:
+                            sAppPackage = ESC_POS_BLUETOOTH_PRINT_SERVICE;
+                            break;
+                        case 1:
+                            sAppPackage = ESC_POS_WIFI_PRINT_SERVICE;
+                            break;
+                        case 2:
+                            sAppPackage = ESC_POS_USB_PRINT_SERVICE;
+                            break;
                     }
-                    else {
-                        Toast.makeText(DemoMain.this, "Hex data Not Valid", Toast.LENGTH_SHORT).show();
-                    }
-                    return;
-                }
-                if (!s.isEmpty()) {
-                    if (cbLf.isChecked()) {
-                        s += "\n";
-                    }
-                    PrintCmd(s);
+                    alert("Selected Print Service : " + spPrintService.getItemAtPosition(position).toString());
                 }
                 else {
-                    Toast.makeText(DemoMain.this, "Enter ASCII data to send to Printer", Toast.LENGTH_SHORT).show();
+                    spPrintService.setTag("");
                 }
             }
-        });
 
-        findViewById(R.id.btnPrintPdf).setOnClickListener(new View.OnClickListener() {
             @Override
-            public void onClick(View v) {
-                filePdfSelector();
-            }
-        });
-
-        findViewById(R.id.btnPrintImg).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fileImageSelector();
-            }
-        });
-
-        findViewById(R.id.btnPrintHtml).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fileHtmlSelector();
-            }
-        });
-
-        findViewById(R.id.btnPrintHtml1).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                fileHtml1Selector();
-            }
-        });
-
-        findViewById(R.id.btnLf).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                PrintCmd("\n");
-            }
-        });
-
-        findViewById(R.id.btnPrintReceipt).setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                //Generate the receipt
-                MyReceipt rcpt = new MyReceipt();
-                rcpt.setReceiptHeader1("Bill Header");
-                rcpt.setReceiptHeader2("-----------");
-                rcpt.setReceiptFooter1("Looped Labs Pvt. Ltd.");
-                rcpt.setReceiptFooter2("www.loopedlabs.com");
-                rcpt.addLineItem("Item 1", "5.00", "1", "5.00");
-                rcpt.addLineItem("Item 2", "12.00", "2", "24.00");
-                rcpt.setReceiptTotal("29.00");
-
-                // Generate the Print Buffer
-                MyPrinter btp = new MyPrinter(DemoMain.this);
-                btp.printLogo();
-                btp.setCenterAlign();
-                btp.setFontStyleBold();
-                btp.printLine(rcpt.getReceiptHeader1());
-                btp.printLine(rcpt.getReceiptHeader2());
-                btp.printLineFeed();
-                btp.printLine(TxtFmt.justify("Name : ", "Customer Name", btp.getMaxLineLength()));
-                btp.printDivider('-');
-                btp.printLine(rcpt.getsReceiptLineHeader());
-                btp.printDivider('-');
-                List<MyReceiptLineItem> rli = rcpt.getLineItems();
-                for (MyReceiptLineItem li : rli) {
-                    btp.printLine(li.getLine());
-                }
-                btp.printDivider('-');
-                btp.printLine(TxtFmt.justify("TOTAL : ", rcpt.getReceiptTotal(), 38));
-                btp.printDivider('-');
-                btp.setCenterAlign();
-                btp.printLine(rcpt.getReceiptFooter1());
-                btp.printLine(rcpt.getReceiptFooter2());
-                btp.printBlankLines(2);
-                btp.setLeftAlign();
-
-                //Print the receipt
-                byte[] pb = btp.getPrintData();
-                if (!PrintCmd(pb)) {
-                    Toast.makeText(DemoMain.this, "Failed", Toast.LENGTH_SHORT).show();
-                }
+            public void onNothingSelected(AdapterView<?> parent) {
             }
         });
 
@@ -195,32 +127,134 @@ public class DemoMain extends AppCompatActivity {
             public void onClick(View v) {
                 PackageManager manager = getPackageManager();
                 try {
-                    Intent i = manager.getLaunchIntentForPackage("com.loopedlabs.escpos.btprintservice");
+                    Intent i = manager.getLaunchIntentForPackage(sAppPackage);
                     if (i != null) {
                         i.addCategory(Intent.CATEGORY_LAUNCHER);
                         startActivity(i);
-                    } else {
-                        Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                    //    mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
+                    }
+                    else {
+                        requestInstallPrintService();
                     }
                 }
                 catch (Exception ignored) {
-                    Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                    //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
+                    requestInstallPrintService();
                 }
+            }
+        });
+
+        final EditText etPrintUrl = findViewById(R.id.etPrintUrl);
+
+        final Spinner spPrintURLType = findViewById(R.id.spPrintURLType);
+        iSelPrintUrlType = 0;
+        sPrintUrl = "https://loopedlabs.com/web-print/loopedlabs.png";
+        sDataType = "PNG_URL";
+        spPrintURLType.setSelection(iSelPrintUrlType, false);
+        spPrintURLType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                iSelPrintUrlType = position;
+                sPrintUrl = etPrintUrl.getText().toString();
+                if (sPrintUrl.isEmpty() || sPrintUrl.contains("loopedlabs")) {
+                    switch (iSelPrintUrlType) {
+                        case 0:
+                            sPrintUrl = "https://loopedlabs.com/web-print/loopedlabs.png";
+                            sDataType = "PNG_URL";
+                            break;
+                        case 1:
+                            sPrintUrl = "https://loopedlabs.com/web-print/loopedlabs.jpg";
+                            sDataType = "JPG_URL";
+                            break;
+                        case 2:
+                            sPrintUrl = "https://loopedlabs.com/web-print/sample.pdf";
+                            sDataType = "PDF_URL";
+                            break;
+                        case 3:
+                            sPrintUrl = "https://loopedlabs.com/web-print/bill.html";
+                            sDataType = "HTML_URL";
+                            break;
+                    }
+                    etPrintUrl.setText(sPrintUrl);
+                }
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+        findViewById(R.id.btnPrintUrl).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                sPrintUrl = etPrintUrl.getText().toString();
+                if (!URLUtil.isNetworkUrl(sPrintUrl)) {
+                    etPrintUrl.requestFocus();
+                    alert("Please enter a valid absolute URL");
+                }
+                else {
+                    hideKeyboard(DemoMain.this);
+                    Intent printIntent = new Intent(ESC_POS_PRINT_INTENT_ACTION);
+                    printIntent.setPackage(sAppPackage);
+                    printIntent.putExtra("DATA_TYPE", sDataType);
+                    printIntent.putExtra(Intent.EXTRA_TEXT, sPrintUrl);
+                    DebugLog.logTrace("Print Intent");
+                    DebugLog.logTrace("Package   : " + sAppPackage);
+                    DebugLog.logTrace("Data Type : " + sDataType);
+                    DebugLog.logTrace("Print Url : " + sPrintUrl);
+                    startActivity(printIntent);
+                }
+            }
+        });
+
+        tvPrintFile = findViewById(R.id.tvPrintFile);
+        final Spinner spPrintFileType = findViewById(R.id.spPrintFileType);
+        iSelPrintFileType = 0;
+        sPrintFile = "";
+        sFileType = "IMAGE_PNG";
+        spPrintFileType.setSelection(iSelPrintFileType, false);
+        spPrintFileType.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                iSelPrintFileType = position;
+                sPrintFile = "";
+                switch (iSelPrintFileType) {
+                    case 0:
+                        sFileType = "IMAGE_PNG";
+                        break;
+                    case 1:
+                        sFileType = "IMAGE_JPG";
+                        break;
+                    case 2:
+                        sFileType = "PDF";
+                        break;
+                    case 3:
+                        sFileType = "HTML";
+                        break;
+                }
+                tvPrintFile.setText(sPrintFile);
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
+        });
+
+        findViewById(R.id.btnBrowse).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                fileSelector();
             }
         });
 
         findViewById(R.id.tvLoopedLabs).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = "http://loopedlabs.com";
+                String url = "https://loopedlabs.com";
                 Intent i = new Intent(Intent.ACTION_VIEW);
                 i.setData(Uri.parse(url));
                 startActivity(i);
             }
         });
     }
+
     private void isStoragePermissionGranted() {
         if (Build.VERSION.SDK_INT >= 23) {
             if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
@@ -235,166 +269,66 @@ public class DemoMain extends AppCompatActivity {
             DebugLog.logTrace("Permission is granted by default");
         }
     }
+
     private FileSelector mFileSel;
-    private void fileHtmlSelector() {
-        String[] fileFilter = {".html",".htm"};
-        mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mHtmlFileListener, fileFilter);
+
+    private void fileSelector() {
+        String[] fileHtmlFilter = {".html", ".htm"};
+        String[] fileJpgFilter = {".jpg", ".jpeg"};
+        String[] filePngFilter = {".png"};
+        String[] filePdfFilter = {".pdf"};
+        switch (sFileType) {
+            case "IMAGE_PNG":
+                mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mFileListener, filePngFilter);
+                break;
+            case "IMAGE_JPG":
+                mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mFileListener, fileJpgFilter);
+                break;
+            case "PDF":
+                mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mFileListener, filePdfFilter);
+                break;
+            case "HTML":
+                mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mFileListener, fileHtmlFilter);
+                break;
+        }
         mFileSel.show();
     }
-    private void fileHtml1Selector() {
-        String[] fileFilter = {".html",".htm"};
-        mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mHtmlFile1Listener, fileFilter);
-        mFileSel.show();
-    }
-    private void fileImageSelector() {
-        String[] fileFilter = {".jpg",".jpeg",".png"};
-        mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mImageFileListener, fileFilter);
-        mFileSel.show();
-    }
-    private void filePdfSelector() {
-        String[] fileFilter = {".pdf"};
-        mFileSel = new FileSelector(DemoMain.this, FileOperation.LOAD, mPdfFileListener, fileFilter);
-        mFileSel.show();
-    }
-    private OnHandleFileListener mHtmlFileListener = new OnHandleFileListener() {
+
+    private OnHandleFileListener mFileListener = new OnHandleFileListener() {
         @Override
         public void handleFile(final String selFileName) {
             DebugLog.logTrace("filePath " + selFileName);
             mFileSel.dismiss();
-            if (isEscPosPrintServiceAvailable(DemoMain.this, ESC_POS_PRINT_INTENT_ACTION)) {
+            tvPrintFile.setText(selFileName);
+            if (isEscPosPrintServiceAvailable()) {
                 File f = new File(selFileName);
                 if (f.canRead()) {
-                    byte[] bHtml = null;
+                    byte[] bytes = null;
                     try {
-                        bHtml = readFileAsByteArray(f);
+                        bytes = readFileAsByteArray(f);
                     }
                     catch (IOException e) {
                         e.printStackTrace();
+                        alert("Unable to read file contents");
                     }
-                    Intent i = new Intent();
-                    i.setAction(ESC_POS_PRINT_INTENT_ACTION);
-                    //i.putExtra(Intent.EXTRA_TEXT, sHtml);
-                    i.putExtra("PRINT_DATA", bHtml);
-                    i.putExtra("DATA_TYPE", "HTML");
-                    startActivityForResult(i, 2);
-                }
-            }
-            else {
-                Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
-            }
-        }
-    };
 
-    private OnHandleFileListener mHtmlFile1Listener = new OnHandleFileListener() {
-        @Override
-        public void handleFile(final String selFileName) {
-            DebugLog.logTrace("filePath " + selFileName);
-            mFileSel.dismiss();
-            if (isEscPosPrintServiceAvailable(DemoMain.this, ESC_POS_PRINT_INTENT_ACTION)) {
-                File f = new File(selFileName);
-                if (f.canRead()) {
-                    String sHtml = null;
-                    try {
-                        sHtml = readFile(f);
-                    }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Log.d("sd", sHtml);
                     Intent i = new Intent();
                     i.setAction(ESC_POS_PRINT_INTENT_ACTION);
-                    i.putExtra(Intent.EXTRA_TEXT, sHtml);
-                    startActivityForResult(i, 2);
+                    i.setPackage(sAppPackage);
+                    i.putExtra("PRINT_DATA", bytes);
+                    i.putExtra("DATA_TYPE", sFileType);
+                    DebugLog.logTrace("Print Intent");
+                    DebugLog.logTrace("Package   : " + sAppPackage);
+                    DebugLog.logTrace("Data Type : " + sFileType);
+                    DebugLog.logTrace("File Name : " + selFileName);
+                    startActivity(i);
+                }
+                else {
+                    alert("Unable to read file");
                 }
             }
             else {
-                Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
-            }
-        }
-    };
-
-    private OnHandleFileListener mHtmlFile1Listener1 = new OnHandleFileListener() {
-        @Override
-        public void handleFile(final String selFileName) {
-            DebugLog.logTrace("filePath " + selFileName);
-            mFileSel.dismiss();
-            if (isEscPosPrintServiceAvailable(DemoMain.this, ESC_POS_PRINT_INTENT_ACTION)) {
-                File f = new File(selFileName);
-                if (f.canRead()) {
-                    String sHtml = null;
-                    try {
-                        sHtml = readFile(f);
-                    }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Log.d("sd", sHtml);
-                    Intent i = new Intent();
-                    i.setAction(ESC_POS_PRINT_INTENT_ACTION);
-                    i.putExtra(Intent.EXTRA_TEXT, sHtml);
-                    startActivityForResult(i, 2);
-                }
-            }
-            else {
-                Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
-            }
-        }
-    };
-
-    private OnHandleFileListener mImageFileListener = new OnHandleFileListener() {
-        @Override
-        public void handleFile(final String selFileName) {
-            DebugLog.logTrace("filePath " + selFileName);
-            mFileSel.dismiss();
-            if (isEscPosPrintServiceAvailable(DemoMain.this, ESC_POS_PRINT_INTENT_ACTION)) {
-                    File f = new File(selFileName);
-                if (f.canRead()) {
-                    Bitmap bitmap = BitmapFactory.decodeFile(selFileName);
-                    ByteArrayOutputStream blob = new ByteArrayOutputStream();
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 0 /* Ignored for PNGs */, blob);
-                    byte[] bitmapdata = blob.toByteArray();
-                    Intent i = new Intent();
-                    i.setAction(ESC_POS_PRINT_INTENT_ACTION);
-                    i.putExtra("PRINT_DATA", bitmapdata);
-                    i.putExtra("DATA_TYPE", "IMAGE_PNG");
-                    startActivityForResult(i, 2);
-                }
-            }
-            else {
-                Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
-            }
-        }
-    };
-
-    private OnHandleFileListener mPdfFileListener = new OnHandleFileListener() {
-        @Override
-        public void handleFile(final String selFileName) {
-            DebugLog.logTrace("filePath " + selFileName);
-            mFileSel.dismiss();
-            if (isEscPosPrintServiceAvailable(DemoMain.this, ESC_POS_PRINT_INTENT_ACTION)) {
-                File f = new File(selFileName);
-                if (f.canRead()) {
-                    byte[] b = new byte[0];
-                    try {
-                        b = FileUtils.readFileAsByteArray(f);
-                    }
-                    catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                    Intent i = new Intent();
-                    i.setAction(ESC_POS_PRINT_INTENT_ACTION);
-                    i.putExtra("PRINT_DATA", b);
-                    i.putExtra("DATA_TYPE", "PDF");
-                    startActivityForResult(i, 2);
-                }
-            }
-            else {
-                Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-                //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
+                requestInstallPrintService();
             }
         }
     };
@@ -410,64 +344,71 @@ public class DemoMain extends AppCompatActivity {
         int id = item.getItemId();
 
         if (id == R.id.action_about) {
-            AlertDialog.Builder aboutBuilder = new AlertDialog.Builder(this);
-            aboutBuilder.setTitle(R.string.app_name);
-            aboutBuilder
-                    .setMessage("App Version : " + BuildConfig.VERSION_CODE + "\nDeveloped By : Looped Labs Pvt. Ltd.\nhttp://loopedlabs.com")
-                    .setCancelable(true)
-                    .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface dialog, int id) {
-                            dialog.cancel();
-                        }
-                    });
-            AlertDialog aboutDialog = aboutBuilder.create();
-            aboutDialog.show();
+            alert("App Version : " + BuildConfig.VERSION_CODE + "\nDeveloped By : Looped Labs Pvt. Ltd.\nhttps://loopedlabs.com");
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
 
-    public boolean PrintCmd(String s) {
-        return !s.isEmpty() && PrintCmd(s.getBytes());
-
-    }
-
-    public boolean PrintCmd(byte[] byteArray) {
-        if (byteArray.length <= 0) {
-            return false;
-        }
-
-        if (isEscPosPrintServiceAvailable(mContext, ESC_POS_PRINT_INTENT_ACTION)) {
-            Intent i = new Intent();
-
-            i.setAction(ESC_POS_PRINT_INTENT_ACTION);
-            i.putExtra("PRINT_DATA", byteArray);
-            startActivityForResult(i, 2);
-            return true;
-        }
-        else {
-            Toast.makeText(DemoMain.this, "ESC POS BT Print Service not installed", Toast.LENGTH_LONG).show();
-            //mContext.startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=com.loopedlabs.escposprintservice")));
-        }
-        return false;
-    }
-
-    public boolean isEscPosPrintServiceAvailable(Context context, String action) {
-        final PackageManager packageManager = context.getPackageManager();
-        final Intent intent = new Intent(action);
-        List resolveInfo =
+    private boolean isEscPosPrintServiceAvailable() {
+        DebugLog.logTrace();
+        final PackageManager packageManager = getPackageManager();
+        final Intent intent = new Intent(ESC_POS_PRINT_INTENT_ACTION);
+        intent.setPackage(sAppPackage);
+        List<ResolveInfo> resolveInfo =
                 packageManager.queryIntentActivities(intent,
                         PackageManager.MATCH_DEFAULT_ONLY);
         return resolveInfo.size() > 0;
     }
 
-    private byte[] hexStringToByteArray(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
+    private static void hideKeyboard(Activity activity) {
+        DebugLog.logTrace();
+        InputMethodManager imm = (InputMethodManager) activity.getSystemService(Activity.INPUT_METHOD_SERVICE);
+        if (imm != null) {
+            View view = activity.getCurrentFocus();
+            if (view == null) {
+                view = new View(activity);
+            }
+            imm.hideSoftInputFromWindow(view.getWindowToken(), 0);
         }
-        return data;
+    }
+
+    private void requestInstallPrintService() {
+        DebugLog.logTrace();
+        AlertDialog.Builder aboutBuilder = new AlertDialog.Builder(this);
+        aboutBuilder.setTitle(R.string.app_name);
+        aboutBuilder
+                .setMessage(spPrintService.getItemAtPosition(iSelPrintService).toString() + " not installed, do you want to install the print service from Google Play Store ?")
+                .setCancelable(true)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                        Intent intentPlayStore = new Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=" + sAppPackage));
+                        startActivity(intentPlayStore);
+                    }
+                })
+                .setNegativeButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog aboutDialog = aboutBuilder.create();
+        aboutDialog.show();
+    }
+
+    private void alert(String sMsg) {
+        DebugLog.logTrace();
+        AlertDialog.Builder aboutBuilder = new AlertDialog.Builder(this);
+        aboutBuilder.setTitle(R.string.app_name);
+        aboutBuilder
+                .setMessage(sMsg)
+                .setCancelable(true)
+                .setPositiveButton(android.R.string.ok, new DialogInterface.OnClickListener() {
+                    public void onClick(DialogInterface dialog, int id) {
+                        dialog.cancel();
+                    }
+                });
+        AlertDialog aboutDialog = aboutBuilder.create();
+        aboutDialog.show();
     }
 }

@@ -49,13 +49,12 @@ import com.loopedlabs.util.debug.DebugLog;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.util.List;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
-
-import static com.loopedlabs.util.FileUtils.readFileAsByteArray;
 
 
 public class DemoMain extends AppCompatActivity {
@@ -411,4 +410,14 @@ public class DemoMain extends AppCompatActivity {
         AlertDialog aboutDialog = aboutBuilder.create();
         aboutDialog.show();
     }
+
+    private static byte[] readFileAsByteArray(File f) throws IOException {
+        RandomAccessFile raf = new RandomAccessFile(f, "r");
+        byte[] bytes = new byte[(int) raf.length()];
+        raf.readFully(bytes);
+        raf.close();
+        return bytes;
+    }
+
+
 }

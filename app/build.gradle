@@ -7,8 +7,8 @@ android {
         applicationId "com.loopedlabs.escposprintservicedemo"
         minSdkVersion 19
         targetSdkVersion 29
-        versionCode 214
-        versionName "2.1.4"
+        versionCode 220
+        versionName "2.2.0"
     }
     buildTypes {
         release {
